@@ -44,7 +44,10 @@ function LaunchPrompt({ config, resource, onLaunch, onCancel, i18n }) {
     setValue('limit', values.limit);
     setValue('job_tags', values.job_tags);
     setValue('skip_tags', values.skip_tags);
-    setValue('extra_vars', mergeExtraVars(values.extra_vars, surveyValues));
+    const extraVars = config.ask_variables_on_launch
+      ? values.extra_vars || '---'
+      : resource.extra_vars;
+    setValue('extra_vars', mergeExtraVars(extraVars, surveyValues));
     setValue('scm_branch', values.scm_branch);
     onLaunch(postValues);
   };
@@ -74,6 +77,9 @@ function LaunchPrompt({ config, resource, onLaunch, onCancel, i18n }) {
           }}
           title={i18n._(t`Prompts`)}
           steps={steps}
+          backButtonText={i18n._(t`Back`)}
+          cancelButtonText={i18n._(t`Cancel`)}
+          nextButtonText={i18n._(t`Next`)}
         />
       )}
     </Formik>

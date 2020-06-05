@@ -89,10 +89,15 @@ spec:
 {% endif %}
       containers:
         - name: {{ kubernetes_deployment_name }}-web
-          image: "{{ kubernetes_web_image }}:{{ kubernetes_web_version }}"
+          image: "{{ kubernetes_awx_image }}:{{ kubernetes_web_version }}"
           imagePullPolicy: Always
           ports:
             - containerPort: 8052
+{% if ca_trust_dir is defined %}
+          env:
+            - name: REQUESTS_CA_BUNDLE
+              value: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+{% endif %}
           volumeMounts:
             - name: supervisor-socket
               mountPath: "/var/run/supervisor"
@@ -102,7 +107,7 @@ spec:
               mountPath: "/var/lib/awx/rsyslog"
 {% if ca_trust_dir is defined %}
             - name: {{ kubernetes_deployment_name }}-ca-trust-dir
-              mountPath: "/etc/pki/ca-trust/source/anchors/"
+              mountPath: "{{ ca_trust_dir }}"
               readOnly: true
 {% endif %}
 {% if project_data_dir is defined %}
@@ -139,12 +144,12 @@ spec:
               readOnly: true
 
             - name: {{ kubernetes_deployment_name }}-supervisor-web-config
-              mountPath: "/supervisor.conf"
+              mountPath: "/etc/supervisord.conf"
               subPath: supervisor.conf
               readOnly: true
 
             - name: {{ kubernetes_deployment_name }}-supervisor-task-config
-              mountPath: "/supervisor_task.conf"
+              mountPath: "/etc/supervisord_task.conf"
               subPath: supervisor_task.conf
               readOnly: true
 
@@ -188,7 +193,7 @@ spec:
               mountPath: "/var/lib/awx/rsyslog"
 {% if ca_trust_dir is defined %}
             - name: {{ kubernetes_deployment_name }}-ca-trust-dir
-              mountPath: "/etc/pki/ca-trust/source/anchors/"
+              mountPath: "{{ ca_trust_dir }}"
               readOnly: true
 {% endif %}
 {% if custom_venvs is defined %}
@@ -215,12 +220,12 @@ spec:
               readOnly: true
 
             - name: {{ kubernetes_deployment_name }}-supervisor-web-config
-              mountPath: "/supervisor.conf"
+              mountPath: "/etc/supervisord.conf"
               subPath: supervisor.conf
               readOnly: true
 
             - name: {{ kubernetes_deployment_name }}-supervisor-task-config
-              mountPath: "/supervisor_task.conf"
+              mountPath: "/etc/supervisord_task.conf"
               subPath: supervisor_task.conf
               readOnly: true
 
@@ -236,7 +241,7 @@ spec:
               mountPath: "/var/run/memcached"
           env:
             - name: SUPERVISOR_WEB_CONFIG_PATH
-              value: "/supervisor.conf"
+              value: "/etc/supervisord.conf"
             - name: AWX_SKIP_MIGRATIONS
               value: "1"
             - name: MY_POD_UID
@@ -247,6 +252,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+{% if ca_trust_dir is defined %}
+            - name: REQUESTS_CA_BUNDLE
+              value: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+{% endif %}
           resources:
             requests:
               memory: "{{ task_mem_request }}Gi"
